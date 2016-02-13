@@ -25,8 +25,12 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.id = self.get_argument("Id")
         self.stream.set_nodelay(True)
         clients[self.id] = {"id":self.id, "object" : self}
+        self.write_message("Hello friend")
+        print "WebSocket %s opened" % (self.id)
 
     def on_message(self, message):
+        msg_res = "Thanks for your message '" + str(message) + "', client : " + self.id
+        self.write_message(msg_res)
         """
         When a message is received we should call a message handler
         :param message: message received

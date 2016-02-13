@@ -4,7 +4,7 @@
     </head>
     <body>
         <a href="javascript:WebSocketTest()">Run WebSocket</a>
-        <div id="messages" style="height:200px;background-color:greenyellow;color:white;"></div>
+        <div id="messages" style="height:200px;background-color:darkslategrey;color:white;"></div>
     </body>
 <footer>
     <script type="text/javascript">
@@ -14,11 +14,11 @@
                 messageContainer.innerHTML = "WebSocket is supported by your Browser!";
                 var ws = new WebSocket("ws://localhost:9000/ws?Id=123456789");
                 ws.onopen = function() {
-                    ws.send("Message to send");
+//                    ws.send("Nice to meet you server");
                 };
                 ws.onmessage = function (evt) {
                     var received_msg = evt.data;
-                    messageContainer.innerHTML = "Message is received...";
+                    messageContainer.innerHTML = received_msg;
                 };
                 ws.onclose = function() {
                     messageContainer.innerHTML = "Connection is closed...";
