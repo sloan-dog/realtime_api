@@ -1,8 +1,16 @@
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
+import motor
+import os
 
 from tornado.options import define, options, parse_command_line
+
+DBUSER = os.environ.get('DBUSER')
+DBKEY = os.environ.get('DBKEY')
+DBURI = "mongodb://%s:%s@ds061345.mongolab.com:61345/sloan_testdb" % (DBUSER, DBKEY)
+
+db = motor.motor_tornado.MotorClient(DBURI)['sloan_testdb']
 
 # set defaut port to 9000
 define("port", default=9000, help="run on this port",type=int)
@@ -10,6 +18,23 @@ define("port", default=9000, help="run on this port",type=int)
 # store connected clients in dict
 # TODO store in mongodb
 clients = dict()
+
+# This defines url routing and which class(view) to call per url
+# WebSocket connections happen on ws:// not http://, tornado
+# Knows how to differeniate and handle these request,
+# So route appears the same but is different protocol
+app = tornado.web.Application([
+    (r'/', IndexHandler),
+    (r'/ws', WebSocketHandler)
+], db=db)
+
+if __name__ == '__main__':
+    # parse_command_line will take options from command line
+    parse_command_line()
+    # listen on port defined in define call
+    app.listen(options.port)
+    # start the ioLoop on server start
+    tornado.ioloop.IOLoop.instance().start()
 
 # Main index view
 class IndexHandler(tornado.web.RequestHandler):
@@ -53,19 +78,3 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         if self.id in clients:
             del clients[self.id]
 
-# This defines url routing and which class(view) to call per url
-# WebSocket connections happen on ws:// not http://, tornado
-# Knows how to differeniate and handle these request,
-# So route appears the same but is different protocol
-app = tornado.web.Application([
-    (r'/', IndexHandler),
-    (r'/ws', WebSocketHandler)
-],)
-
-if __name__ == '__main__':
-    # parse_command_line will take options from command line
-    parse_command_line()
-    # listen on port defined in define call
-    app.listen(options.port)
-    # start the ioLoop on server start
-    tornado.ioloop.IOLoop.instance().start()
