@@ -5,14 +5,30 @@
     <body>
         <a href="javascript:WebSocketTest()">Run WebSocket</a>
         <div id="messages" style="height:200px;background-color:darkslategrey;color:white;"></div>
+        <div id="message-send-container">
+            <form name="message-sender" id="message-sender">
+                <input type="text" id="message-text" placeholder="Enter a message to send">
+                <input type="submit" value="Send Msg">
+            </form>
+        </div>
+
     </body>
 <footer>
     <script type="text/javascript">
+        window.mysocket = null;
+        document.getElementById("message-sender").addEventListener("submit", function(e) {
+            e.preventDefault();
+            var msg = document.getElementById("message-text").value;
+            window.mysocket.send(msg);
+            document.getElementById("message-text").value = "";
+        });
+
         var messageContainer = document.getElementById("messages");
         function WebSocketTest() {
             if ("WebSocket" in window) {
                 messageContainer.innerHTML = "WebSocket is supported by your Browser!";
                 var ws = new WebSocket("ws://localhost:9000/ws?Id=123456789");
+                window.mysocket = ws;
                 ws.onopen = function() {
 //                    ws.send("Nice to meet you server");
                 };

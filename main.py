@@ -17,8 +17,18 @@ class IndexHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("static/index.html")
         # self.write("This is your response")
-        # finsh() closes request loop and we no longer need it because self.finish() is called inside tornado
+        # finsh() closes request loop and we no longer need it because self.finish()
+        # is called inside tornado during render
         # self.finish()
+
+class MessageHandler(object):
+    def __init__(self, message, socket):
+        self.message = message
+        self.socket = socket
+        print str(self.message + "MessageHandler Initialized")
+
+    def respond(self):
+        self.socket.write_message("this is a response message");
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def open(self,*args):
@@ -29,8 +39,9 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         print "WebSocket %s opened" % (self.id)
 
     def on_message(self, message):
-        msg_res = "Thanks for your message '" + str(message) + "', client : " + self.id
-        self.write_message(msg_res)
+        message_handler = MessageHandler(message,socket=self)
+        message_handler.respond()
+
         """
         When a message is received we should call a message handler
         :param message: message received
