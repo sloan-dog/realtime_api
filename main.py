@@ -44,7 +44,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 # So route appears the same but is different protocol
 app = tornado.web.Application([
     (r'/', IndexHandler),
-    (r'/', WebSocketHandler)
+    (r'/ws', WebSocketHandler)
 ],)
 
 if __name__ == '__main__':
