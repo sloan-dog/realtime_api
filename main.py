@@ -41,7 +41,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         print "WebSocket %s opened" % (self.id)
 
     def on_message(self, message):
-        message_handler = MessageHandler(message,socket=self)
+        message_handler = NewMessageHandler(message,socket=self)
         message_handler.respond()
 
         """
@@ -55,7 +55,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         if self.id in clients:
             del clients[self.id]
 
-class MessageHandler(object):
+class NewMessageHandler(object):
     def __init__(self, message, socket):
         self.message = message
         self.socket = socket
@@ -71,8 +71,7 @@ class MessageHandler(object):
             if stripped_list[0] == "send":
                 if stripped_list[1] == "get":
                     if stripped_list[2]:
-                        IOLoop.current().stop()
-                        IOLoop.current().run_sync(do_find_one)
+                         collection.find_one({"tim":"babycakes"},callback=self._find_one_cb)
                 elif stripped_list[1] == "set":
                     if stripped_list[2]:
                         if stripped_list[3]:
@@ -90,6 +89,12 @@ class MessageHandler(object):
     def respond(self):
         self.socket.write_message("this is a response message");
 
+    def _find_one_cb(self, result, error):
+        if error:
+            raise tornado.web.HTTPError(500, error)
+        else:
+            print repr(result)
+
 @gen.coroutine
 def do_insert(doc):
     future = collection.insert(doc)
@@ -101,6 +106,7 @@ def do_find_one():
     future = collection.find_one({"tim":"babycakes"})
     result = yield future
     print 'result %s' % repr(result)
+
 
 
 
@@ -122,4 +128,4 @@ if __name__ == '__main__':
     # listen on port defined in define call
     app.listen(options.port)
     # start the ioLoop on server start
-    io_loop = IOLoop.current().run_sync('__main__')
+    IOLoop.current().start()
