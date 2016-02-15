@@ -58,7 +58,7 @@ $(document).ready(function(){
         if ("WebSocket" in window) {
             append_msg("WebSocket is supported by your Browser!");
             var hid_str = gen_random_hashID("I love steak and eggs");
-            var ws = new WebSocket("ws://localhost:9000/ws?Id=" + hid_str);
+            var ws = new WebSocket("ws://" + window.location.host + "/ws?Id=" + hid_str);
 
             window.mysocket = ws;
 
