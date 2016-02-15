@@ -2,11 +2,12 @@ import re
 import datetime
 
 def match_commands(string):
-    regex = r"^\/(?P<send>send(?=\s" \
-            r"\/(?P<action>set(?=\s(?P<key>[\w]+):(?P<value>[\w.\s,!?]+))" \
-            r"|get(?=\s(?P<key2>[\w]+)$))))|(connect(?=$))|(say(?=\s([\w.\-!_?\s]+)))" \
+    regex = r"^\/" \
+            r"(?:(send(?=\s\/(?:(set|get)(?=\s([\w]+):([\w.\s,!?]+)$))))" \
+            r"|(connect(?=$))" \
+            r"|(say(?=\s([\w.\-!_?\s]+)))" \
             r"|(connections(?=$))" \
-            r"|(disconnect(?=$))"
+            r"|(disconnect(?=$)))"
 
     return re.findall(regex, string, re.X)
 

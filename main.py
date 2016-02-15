@@ -152,7 +152,7 @@ class NewMessageHandler(object):
             if stripped_list[0] == "send":
                 if stripped_list[1] == "get":
                     if stripped_list[2]:
-                         collection.find_one({"tim":"babycakes"}, callback=self._find_one_cb)
+                         collection.find_one({stripped_list[2]: stripped_list[3]}, callback=self._find_one_cb)
                 elif stripped_list[1] == "set":
                     if stripped_list[2]:
                         if stripped_list[3]:
