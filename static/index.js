@@ -5,6 +5,31 @@ $(document).ready(function(){
     var page_header = $.el.div({"class":"page-header"}, $.el.h2({"class":"header-text"}, header_text_val ));
     $("html").prepend(page_header);
 
+    var demo_strings = [
+        {"left":"/connect","right":"Connect via WebSockets to the server"},
+        {"left":"/send /get cat:mr.pookums","right":"Get a document where cat == mr.pookums"},
+        {"left":"/send /set dog:waffles","right":"Create a document where dog == waffles"},
+        {"left":"/say whatsupmydude","right":"Send an arbitrary message to the server"},
+        {"left":"/connections","right":"List all active connections and uptimes"},
+        {"left":"/disconnect","right":"Disconnect, drop the mic, and throw up ya deuces"}
+    ];
+
+    var examples_row = $.el.div({"class":"examples-row row"});
+    var examples_col = $.el.div({"class":"example-main-col col"});
+    var ex_header_row = $.el.div({"class":"example-header-row row"}).appendTo(examples_col);
+    var ex_header_text = $.el.h3({"class":"example-header-text"}, "Command Examples").appendTo(ex_header_row);
+    $(examples_row).append(examples_col);
+    $("body").append(examples_row);
+
+    demo_strings.forEach(function(item) {
+        var wrp = $.el.div({"class":"example-text-row row"});
+        var leftCol = $.el.div({"class":"example-col col col-left"},$.el.h3({"class":"example-text-left"}, item.left));
+        var rightCol = $.el.div({"class":"example-col col col-right"},$.el.h3({"class":"example-text-left"}, item.right));
+        $(wrp).append(leftCol);
+        $(wrp).append(rightCol);
+        $(examples_col).append(wrp);
+    });
+
     document.getElementById("message-sender").addEventListener("submit", function (e) {
         e.preventDefault();
         var msg = document.getElementById("message-text").value;

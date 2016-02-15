@@ -1,6 +1,17 @@
 * {
     font-family: sans-serif;
-    color: lightslategray;
+    color: #141e26;
+}
+
+h3 {
+    margin-top: 5px;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+body {
+    padding: 0;
+    margin: 0;
 }
 
 div .msg-text {
@@ -14,4 +25,87 @@ div.page-header {
 
 .header-text {
     text-align: center;
+}
+
+input[type=text] {
+    padding-left: 20px;
+}
+
+input[type=text]::placeholder {
+    color: #f7ebdd;
+}
+
+.example-header-row {
+    border-bottom: 1px solid deeppink;
+    margin-bottom: 15px;
+}
+
+
+#message-text {
+    font-size: 26px;
+    background-color: deeppink;
+    color: #f7ebdd;
+    width: 80%;
+    float: left;
+    height: 50px;
+    border: none;
+}
+
+input[type=submit] {
+    font-size: 16px;
+    width: 20%;
+    background-color: #1E3946;
+    color: whitesmoke;
+    float: left;
+    height: 50px;
+    border:none;
+    -webkit-transition: width 0.5s, height 0.5s, background-color 0.5s, -webkit-transform 0.5s;
+    transition: width 0.5s, height 0.5s, background-color 0.5s, transform 0.5s;
+}
+
+
+
+input[type=submit]:hover {
+    background-color: #11c6df;
+}
+
+#message-send-container {
+    width: 100%;
+    float: left;
+}
+
+.examples-row {
+    width: 65%;
+    margin: 0 auto;
+}
+.col {
+    display: block;
+}
+.col.example-col {
+    display:inline-block;
+    width: 50%;
+}
+.row {
+    float: left;
+    width: 100%;
+}
+
+.col.example-main-col {
+    margin: 0 auto;
+    margin-top: 20px;
+    width: 75%;
+
+}
+
+.example-header-text {
+    text-align: center;
+}
+
+/*clear fix*/
+.row:after {
+   content: ".";
+   visibility: hidden;
+   display: block;
+   height: 0;
+   clear: both;
 }
