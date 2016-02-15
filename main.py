@@ -5,7 +5,6 @@ import tornado.websocket
 import motor
 import os
 import helpers
-import datetime
 
 from tornado.options import define, options, parse_command_line
 
@@ -15,6 +14,7 @@ DBURI = "mongodb://%s:%s@ds061345.mongolab.com:61345/sloan_testdb" % (DBUSER, DB
 
 db = motor.motor_tornado.MotorClient(DBURI)['sloan_testdb']
 collection = db['test_collection']
+connections_collection = db['connections']
 
 # set defaut port to 9000
 define("port", default=9000, help="run on this port",type=int)
@@ -38,11 +38,17 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def open(self,*args):
         self.id = self.get_argument("Id")
         self.stream.set_nodelay(True)
-        clients[self.id] = {"id":self.id, "object" : self, "init_time": get_cur_srv_time()}
+        self.conn_handler = ConnectionsHandler(socket=self)
+        self.conn_handler.add_connection()
+
+
+        clients[self.id] = {"id":self.id, "object" : self, "init_time": helpers.get_cur_srv_time_ms()}
+
         self.write_message("Hello friend")
         print "WebSocket %s opened" % (self.id)
 
     def on_message(self, message):
+        self.conn_handler.increment_messages()
         message_handler = NewMessageHandler(message, socket=self)
 
         """
@@ -56,11 +62,85 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         if self.id in clients:
             del clients[self.id]
 
+        self.conn_handler.remove_connection()
+
+class ConnectionsHandler(object):
+    def __init__(self, socket):
+        self.socket = socket
+        self.connections = []
+
+    def _add_connection_cb(self, result, error):
+        if error:
+            raise tornado.web.HTTPError(500, error)
+        else:
+            message_handler = NewMessageHandler(message=None,socket = self.socket)
+            message_handler.respond(msg_type="Connect", data=result)
+            print repr(result)
+
+    def _get_connections_done(self, result, error):
+        if error:
+            raise tornado.web.HTTPError(500, error)
+        else:
+            for i in range(len(result)):
+                time = result[i]["init_time"]
+                f_time = helpers.format_ms_to_hmsf(
+                    helpers.time_dif_from_val_to_now(time)
+                )
+                result[i]["uptime"] = f_time
+                del result[i]["_id"]
+                del result[i]["init_time"]
+
+            message_handler = NewMessageHandler(message=None, socket = self.socket)
+            message_handler.respond(msg_type="Connections", data=result)
+            print repr(result)
+
+    def _remove_connection_done(self, result, error):
+        if error:
+            raise tornado.web.HTTPError(500, error)
+        else:
+            print "Connection deleted" + repr(result)
+
+
+    def _connections_each(self, result, error):
+        if error:
+            raise error
+        elif result:
+            self.connections.append(result)
+        else:
+            print "Done"
+            self._get_connections_done(result=self.connections,error=error)
+
+    def _increment_messages_done(self, result, error):
+        if error:
+            raise error
+        elif result:
+            print repr(result)
+
+    def add_connection(self):
+        connection = {"id":self.socket.id, "init_time": helpers.get_cur_srv_time_ms(), "messages":0}
+        connections_collection.insert(connection, callback=self._add_connection_cb)
+
+    def get_connections(self):
+        connections_collection.find().each(callback=self._connections_each)
+
+    def remove_connection(self):
+        connections_collection.remove({"id":self.socket.id},callback=self._remove_connection_done)
+
+    def increment_messages(self):
+        connections_collection.find_and_modify(
+            query={"id": self.socket.id},
+            update={"$inc": {"messages": 1}},
+            new=True,
+            callback=self._increment_messages_done
+        )
+
 class NewMessageHandler(object):
     def __init__(self, message, socket):
-        self.message = {"message":message,"timestamp":get_cur_srv_time()}
+        self.response_message = ""
+        self.message = {"message":message, "timestamp": helpers.get_cur_srv_time()}
         self.socket = socket
-        print self.interpret_msg()
+        if self.message["message"] is not None:
+            self.interpret_msg()
 
     def interpret_msg(self):
         command = helpers.match_commands(self.message["message"])
@@ -79,23 +159,42 @@ class NewMessageHandler(object):
                             doc = {stripped_list[2]:stripped_list[3]}
                             collection.insert(doc, callback=self._insert_cb)
 
-            elif stripped_list[0] == "connect":
-                pass
             elif stripped_list[0] == "say":
-                self.respond()
+                self.respond(msg_type="Sent")
+
             elif stripped_list[0] == "connections":
-                self.respond()
+                ConnectionsHandler(socket=self.socket).get_connections()
+
+            elif stripped_list[0] == "disconnect":
+                self.socket.close()
+
             else:
                 print "Invalid Command"
+
         else:
             print "Invalid Command"
-            self.respond(error_message="Invalid Command Sent")
+            self.respond(msg_type="Invalid")
 
-    def respond(self, error_message=None):
-        if error_message is None:
+    def respond(self, msg_type="Sent", data=None):
+        if msg_type == "Sent":
             self.response_msg = str(self.message["timestamp"]) + " Sent: " + self.message["message"]
-        else:
-            self.response_msg = str(self.message["timestamp"]) + " " + str(error_message) + ": " + self.message["message"]
+
+        elif msg_type == "Invalid":
+            self.response_msg = str(self.message["timestamp"]) + " " + "Invalid Command: " + ": " + self.message["message"]
+
+        elif msg_type == "Received":
+            if data is not None:
+                self.response_msg = str(self.message["timestamp"]) + " Received: " + repr(data) + " OK"
+            else:
+                self.response_msg = str(self.message["timestamp"]) + " Received: null"
+
+        elif msg_type == "Connections":
+            if data is not None:
+                self.response_msg = str(self.message["timestamp"]) + " Connections: " + repr(data) + " OK"
+
+        elif msg_type == "Connect":
+            if data is not None:
+                self.response_msg = str(self.message["timestamp"]) + " Connected!: " + repr(data) + " OK"
 
         self.socket.write_message(self.response_msg)
 
@@ -104,18 +203,26 @@ class NewMessageHandler(object):
         if error:
             raise tornado.web.HTTPError(500, error)
         else:
-            self.respond()
+            self.respond(msg_type="Received",data=result)
             print repr(result)
 
     def _insert_cb(self, result, error):
         if error:
             raise tornado.web.HTTPError(500, error)
         else:
-            self.respond()
+            self.respond(msg_type="Received",data=result)
             print repr(result)
 
     def get_current_connections(self):
+        clients_data = {}
+        # for each client we need uptime, messages, and id
+        for key in clients:
+            if key == "123456789":
+                pass
         return repr(clients)
+
+    def _return_uptime(self):
+        pass
 
 @gen.coroutine
 def do_insert(doc):
@@ -128,15 +235,6 @@ def do_find_one():
     future = collection.find_one({"tim":"babycakes"})
     result = yield future
     print 'result %s' % repr(result)
-
-def get_cur_srv_time():
-    t = datetime.datetime.now()
-    return t.strftime('%H:%M:%S.%f')
-
-def s_round(time_string):
-    time_string
-
-
 
 # This defines url routing and which class(view) to call per url
 # WebSocket connections happen on ws:// not http://, tornado

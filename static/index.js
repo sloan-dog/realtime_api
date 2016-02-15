@@ -23,10 +23,17 @@ $(document).ready(function(){
         $(messageContainer).append($.el.div({'class': 'tim'}, $.el.h3({'class': 'msg-text'}, value)));
     }
 
+    function gen_random_hashID(salt) {
+        var num = Math.floor(Math.random() * 10000000)
+        var hashids = new Hashids(salt);
+        return hashids.encode(num);
+    };
+
     function WebSocketTest() {
         if ("WebSocket" in window) {
             messageContainer.innerHTML = "WebSocket is supported by your Browser!";
-            var ws = new WebSocket("ws://localhost:9000/ws?Id=123456789");
+            var hid_str = gen_random_hashID("I love steak and eggs");
+            var ws = new WebSocket("ws://localhost:9000/ws?Id=" + hid_str);
 
             window.mysocket = ws;
 
