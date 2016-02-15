@@ -1,26 +1,51 @@
 $(document).ready(function(){
     window.mysocket = null;
 
+    var header_text_val = "Real Time Command-Line API"
+    var page_header = $.el.div({"class":"page-header"}, $.el.h2({"class":"header-text"}, header_text_val ));
+    $("html").prepend(page_header);
+
     document.getElementById("message-sender").addEventListener("submit", function (e) {
         e.preventDefault();
         var msg = document.getElementById("message-text").value;
-        window.mysocket.send(msg);
-        var d = new Date();
-        var local_message = d.toTimeString().split(" ")[0] + "." + d.getMilliseconds()  + " Command: " + msg;
-        append_msg(local_message);
+        if (!window.mysocket) {
+            var re = new RegExp("\/(connect(?=$))","i");
+            match = re.exec(msg);
+            if (match) {
+                WebSocketTest();
+            } else {
+                append_msg(local_message(msg))
+            }
+        } else if (window.mysocket) {
+            window.mysocket.send(msg);
+            append_msg(local_message(msg));
+        }
+
         document.getElementById("message-text").value = "";
     });
 
     var messageContainer = document.getElementById("messages");
-    var openSocketBtn = $.el.a({"href":"","class":"big-link","id":"open-socket-btn"},"Open WebSocket");
-    $(openSocketBtn).on("click", function(e){
-        e.preventDefault();
-        WebSocketTest();
-    });
-    $(openSocketBtn).insertBefore(messageContainer);
+
+    function doScroll() {
+        var height = 0;
+        var msg_div = $('#messages');
+        msg_div.find(".msg-text").each(function(i, value){
+            height += parseInt($(this).height());
+            height += parseInt($(this).css("margin-top")) * 2;
+        });
+
+        msg_div.animate({scrollTop: String(height)});
+    }
+
+
+    var local_message = function(msg) {
+        var d = new Date();
+        return d.toTimeString().split(" ")[0] + "." + d.getMilliseconds()  + " Command: " + msg;
+    };
 
     function append_msg(value) {
         $(messageContainer).append($.el.div({'class': 'tim'}, $.el.h3({'class': 'msg-text'}, value)));
+        doScroll();
     }
 
     function gen_random_hashID(salt) {
@@ -31,7 +56,7 @@ $(document).ready(function(){
 
     function WebSocketTest() {
         if ("WebSocket" in window) {
-            messageContainer.innerHTML = "WebSocket is supported by your Browser!";
+            append_msg("WebSocket is supported by your Browser!");
             var hid_str = gen_random_hashID("I love steak and eggs");
             var ws = new WebSocket("ws://localhost:9000/ws?Id=" + hid_str);
 
@@ -45,7 +70,9 @@ $(document).ready(function(){
                 append_msg(received_msg);
             };
             ws.onclose = function () {
-                messageContainer.innerHTML = "Connection is closed...";
+                append_msg("Connection is closed...");
+                delete window.mysocket;
+                ws = undefined;
             };
         } else {
             messageContainer.innerHTML = "WebSocket NOT supported by your Browser!";

@@ -29,4 +29,4 @@ def format_ms_to_hmsf(ms_time):
     return "%02d:%02d:%02d.%03d" % (h, m, s, f)
 
 def get_cur_srv_time():
-    return datetime.datetime.now().strftime("%H%M%S%f")[:-3]
+    return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]

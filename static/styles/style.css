@@ -1,0 +1,17 @@
+* {
+    font-family: sans-serif;
+    color: lightslategray;
+}
+
+div .msg-text {
+    padding-left: 10px;
+    color: lightblue;
+}
+
+div.page-header {
+    width: 100%;
+}
+
+.header-text {
+    text-align: center;
+}

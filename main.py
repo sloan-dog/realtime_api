@@ -213,17 +213,6 @@ class NewMessageHandler(object):
             self.respond(msg_type="Received",data=result)
             print repr(result)
 
-    def get_current_connections(self):
-        clients_data = {}
-        # for each client we need uptime, messages, and id
-        for key in clients:
-            if key == "123456789":
-                pass
-        return repr(clients)
-
-    def _return_uptime(self):
-        pass
-
 @gen.coroutine
 def do_insert(doc):
     future = collection.insert(doc)
